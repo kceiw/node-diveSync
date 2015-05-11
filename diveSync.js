@@ -1,5 +1,6 @@
 var fs = require('fs'),
-    append = require('append');
+    append = require('append'),
+    path = require('path');
 
 // general function
 var diveSync = function(dir, opt, action) {
@@ -33,28 +34,34 @@ var diveSync = function(dir, opt, action) {
     list.sort().some(function (file) {
       if (opt.all || file[0] != '.') {
         // full path of that file
-        var path = dir + '/' + file;
+        var fullPath = null;
+
+        if (dir.slice(-1) === path.sep) {
+            fullPath = dir + file;
+        } else {
+            fullPath = dir + path.sep + file;
+        }
 
         // get the file's stats
-        var stat = fs.statSync(path);
+        var stat = fs.statSync(fullPath);
 
         // if the file is a directory
         if (stat && stat.isDirectory()) {
           // call the action if enabled for directories
           if (opt.directories)
-            if (action(null, path) === false)
+            if (action(null, fullPath) === false)
               return true;
 
           // dive into the directory
           if (opt.recursive)
-            diveSync(path, opt, action);
+            diveSync(fullPath, opt, action);
         } else {
           // apply filter
-          if (!opt.filter(path, false))
+          if (!opt.filter(fullPath, false))
             return false;
 
           // call the action
-          return action(null, path) === false;
+          return action(null, fullPath) === false;
         }
       }
     });
